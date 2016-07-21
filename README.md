@@ -1,2 +1,3 @@
 # EmailSpider
-github Email爬虫
+Email爬虫
+在setting.js配置文件中user一项填写你的目标对象，它应该是一个github用户名，之后，Email爬虫会抓取所有该用户关注以及关注该用户的用户的Email。（配置项中asyncNum1为获取主页链接并发连接数，asyncNum2为获取Email并发连接数，asyncNum2最好不要超过10，否则github可能会返回429状态码导致进程中断）
