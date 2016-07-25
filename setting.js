@@ -18,7 +18,7 @@ module.exports = {
 	//获取主页链接并发连接数
 	asyncLink : 30,
 	//获取Email并发连接数
-	asyncEmail : 5,
+	asyncEmail : 15,
 	//目标用户名
 	user : "zhangmengxue"
 }

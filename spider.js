@@ -5,7 +5,10 @@ var request = require("superagent");
 var path = require("path");
 var setting = require("./setting.js");
 var unique = require("./mini_func/unique.js");
-var User = require("./model/user.js");
+var mongoose = require("mongoose");
+var user_model = require("./models/user.js");
+
+mongoose.connect("mongodb://" + setting.data_base.host + ":" + setting.data_base.port + "/" + setting.data_base.db);
 
 var eventproxy = new eventproxy();
 var header = setting.header;
@@ -27,7 +30,7 @@ function start(){
 	//获取完所有user的主页链接后触发此函数
 	eventproxy.all("getFollowersLinks", "getFollowingLinks", function(followersLinks, followingLinks){
 		allFollowLinks = unique(followersLinks.concat(followingLinks));
-		console.log(allFollowLinks.length);
+		console.log("全部跟随者及关注者的主页链接数量为：" + allFollowLinks.length);
 		console.log(allFollowLinks);
 		console.log("全部跟随者及关注者的主页链接已抓取完毕，即将异步并发抓取所有跟随者及关注者的Email，当前并发数为：" + asyncEmail);
 		//根据所有user的主页链接并发抓取相对应的Email
@@ -41,10 +44,11 @@ function start(){
 					if(email && email!=""){
 						console.log(email);
 					};
-					callback(null, email);
+					callback(null, { link : Link, email : email });
 				})
 				.catch((error) => {
 					console.log(error);
+					callback(null, { link : Link, email : "" });
 				});
 		},function(error, result){
 			if(error){
@@ -52,7 +56,33 @@ function start(){
 			}else{
 				console.log("all right");
 				console.log(result);
-				return;
+				console.log("正在对数据进行存储...");
+				var users = [];
+				//把Email为空的用户剔除
+				for(var i=0; i<result.length; i++){
+					if(result[i].email != ""){
+						users.push(result[i]);
+					};
+				};
+				console.log(users);
+				//写入数据库
+				count = 0;
+				for(let i=0; i<users.length; i++){
+					user_model.findOne({ email : users[i].email }, function(err, doc){
+						if(err){
+							console.log(err);
+						}else if(!doc){
+							user_model.create({ link : users[i].link, email : users[i].email }, function(err, doc){
+								if(err){
+									console.log(err);
+								}else{
+									count++;
+									console.log("已成功保存 " + count + " 条记录");
+								};
+							});
+						};
+					});
+				};
 			};
 		});
 	});
