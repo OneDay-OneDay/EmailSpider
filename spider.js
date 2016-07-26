@@ -29,7 +29,7 @@ function start(){
 	getLinks("following", followingAll, followingLink);
 	//获取完所有user的主页链接后触发此函数
 	eventproxy.all("getFollowersLinks", "getFollowingLinks", function(followersLinks, followingLinks){
-		allFollowLinks = unique(followersLinks.concat(followingLinks));
+		var allFollowLinks = unique(followersLinks.concat(followingLinks));
 		console.log("全部跟随者及关注者的主页链接数量为：" + allFollowLinks.length);
 		console.log(allFollowLinks);
 		console.log("全部跟随者及关注者的主页链接已抓取完毕，即将异步并发抓取所有跟随者及关注者的Email，当前并发数为：" + asyncEmail);
@@ -57,35 +57,40 @@ function start(){
 				console.log("all right");
 				console.log(result);
 				console.log("正在对数据进行存储...");
-				var users = [];
-				//把Email为空的用户剔除
-				for(var i=0; i<result.length; i++){
-					if(result[i].email != ""){
-						users.push(result[i]);
-					};
-				};
-				console.log(users);
-				//写入数据库
-				count = 0;
-				for(let i=0; i<users.length; i++){
-					user_model.findOne({ email : users[i].email }, function(err, doc){
-						if(err){
-							console.log(err);
-						}else if(!doc){
-							user_model.create({ link : users[i].link, email : users[i].email }, function(err, doc){
-								if(err){
-									console.log(err);
-								}else{
-									count++;
-									console.log("已成功保存 " + count + " 条记录");
-								};
-							});
-						};
-					});
-				};
+				saveEmails(result);
 			};
 		});
 	});
+}
+
+//持久化存储
+function saveEmails(result){
+	var users = [];
+	//把Email为空的用户剔除
+	for(var i=0; i<result.length; i++){
+		if(result[i].email != ""){
+			users.push(result[i]);
+		};
+	};
+	console.log(users);
+	//写入数据库
+	count = 0;
+	for(let i=0; i<users.length; i++){
+		user_model.findOne({ email : users[i].email }, function(err, doc){
+			if(err){
+				console.log(err);
+			}else if(!doc){
+				user_model.create({ link : users[i].link, email : users[i].email }, function(err, doc){
+					if(err){
+						console.log(err);
+					}else{
+						count++;
+						console.log("已成功保存 " + count + " 条记录");
+					};
+				});
+			};
+		});
+	};
 }
 
 //获取跟随者或关注者所有的主页链接
@@ -123,6 +128,7 @@ function getLinks(type, all, links){
 					})
 					.catch((error) => {
 						console.log(error);
+						callback(null, null);
 					});
 			},function(error, result){
 				if(error){
